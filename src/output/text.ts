@@ -28,8 +28,6 @@ function formatResultLines(results: CheckResult[], includeSuggestions: boolean, 
 function formatSection(section: RepoScanResult, includeSuggestions: boolean): string[] {
   const lines = [`${section.kind === "root" ? "Root" : "Workspace"}: ${section.name}`, `Path: ${section.path}`];
   lines.push(...formatResultLines(section.results, includeSuggestions));
-  lines.push(`Verdict: ${section.verdict}`);
-  lines.push(`Summary: ${formatSummary(section.summary)}`);
   return lines;
 }
 
@@ -74,6 +72,8 @@ export function formatTextReport(report: PreflightReport, options?: { ci?: boole
   for (const workspace of report.workspaces) {
     lines.push("");
     lines.push(...formatSection(workspace, includeSuggestions));
+    lines.push(`Verdict: ${workspace.verdict}`);
+    lines.push(`Summary: ${formatSummary(workspace.summary)}`);
   }
 
   lines.push("");

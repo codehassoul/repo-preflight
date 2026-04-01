@@ -592,6 +592,22 @@ test("healthy repos still produce calm output with no warning inflation", async 
   }
 });
 
+test("root-only text output does not repeat the final verdict block", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir);
+  });
+
+  try {
+    const report = await runPreflight(dir);
+    const output = formatTextReport(report);
+
+    assert.equal((output.match(/Verdict: Ready/g) ?? []).length, 1);
+    assert.equal((output.match(/Summary: 8 pass, 0 info, 0 warn, 0 fail/g) ?? []).length, 1);
+  } finally {
+    await cleanup(dir);
+  }
+});
+
 test("fixture regression matrix produces the expected verdicts", async () => {
   const cases: Array<{
     fixture: string;
