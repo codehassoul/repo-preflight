@@ -4,7 +4,7 @@ Local-first CLI for checking whether a JavaScript or TypeScript repository is ac
 
 [![npm version](https://img.shields.io/npm/v/repo-preflight.svg)](https://www.npmjs.com/package/repo-preflight)
 [![license](https://img.shields.io/github/license/codehassoul/repo-preflight)](https://github.com/codehassoul/repo-preflight/blob/codex/release-polish/LICENSE)
-[![CI](https://github.com/codehassoul/repo-preflight/actions/workflows/ci.yml/badge.svg)](https://github.com/codehassoul/repo-preflight/actions/workflows/ci.yml)
+[![CI](https://github.com/codehassoul/repo-preflight/actions/workflows/ci.yml/badge.svg?branch=codex/release-polish)](https://github.com/codehassoul/repo-preflight/actions/workflows/ci.yml)
 
 `repo-preflight` is a local-first CLI for quickly answering a practical question:
 
