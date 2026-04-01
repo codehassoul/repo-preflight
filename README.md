@@ -1,5 +1,11 @@
 # repo-preflight
 
+Local-first CLI for checking whether a JavaScript or TypeScript repository is actually ready to work in.
+
+[![npm version](https://img.shields.io/npm/v/repo-preflight.svg)](https://www.npmjs.com/package/repo-preflight)
+[![license](https://img.shields.io/npm/l/repo-preflight.svg)](https://github.com/codehassoul/repo-preflight/blob/codex/release-polish/LICENSE)
+[![tests](https://img.shields.io/badge/tests-24%20passing-brightgreen)](https://github.com/codehassoul/repo-preflight)
+
 `repo-preflight` is a local-first CLI for quickly answering a practical question:
 
 > Is this JavaScript or TypeScript repo actually ready to work in?

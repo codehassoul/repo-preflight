@@ -2,6 +2,14 @@
   "name": "repo-preflight",
   "version": "1.0.0",
   "description": "Local-first CLI to check whether a JS/TS repo is actually ready to run.",
+  "homepage": "https://github.com/codehassoul/repo-preflight#readme",
+  "bugs": {
+    "url": "https://github.com/codehassoul/repo-preflight/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codehassoul/repo-preflight.git"
+  },
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "bin": {
@@ -29,11 +37,15 @@
     "cli",
     "developer-tools",
     "javascript",
+    "js",
     "monorepo",
     "nodejs",
     "preflight",
     "readiness",
     "repository",
+    "repo-health",
+    "repo-tooling",
+    "setup-check",
     "typescript"
   ],
   "author": "",
