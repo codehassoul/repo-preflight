@@ -3,8 +3,8 @@
 Local-first CLI for checking whether a JavaScript or TypeScript repository is actually ready to work in.
 
 [![npm version](https://img.shields.io/npm/v/repo-preflight.svg)](https://www.npmjs.com/package/repo-preflight)
-[![license](https://img.shields.io/npm/l/repo-preflight.svg)](https://github.com/codehassoul/repo-preflight/blob/codex/release-polish/LICENSE)
-[![tests](https://img.shields.io/badge/tests-24%20passing-brightgreen)](https://github.com/codehassoul/repo-preflight)
+[![license](https://img.shields.io/github/license/codehassoul/repo-preflight)](https://github.com/codehassoul/repo-preflight/blob/codex/release-polish/LICENSE)
+[![tests](https://img.shields.io/badge/tests-25%20passing-brightgreen)](https://github.com/codehassoul/repo-preflight)
 
 `repo-preflight` is a local-first CLI for quickly answering a practical question:
 
@@ -172,9 +172,6 @@ Path: /path/to/repo
 PASS  Found package-lock.json for npm.
 INFO  Missing dev script.
 WARN  node_modules is missing.
-Verdict: Ready with warnings
-Summary: 1 pass, 1 info, 1 warn, 0 fail
-
 Verdict: Ready with warnings
 Summary: 1 pass, 1 info, 1 warn, 0 fail
 ```
