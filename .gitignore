@@ -1,4 +1,8 @@
 node_modules/
+!test/fixtures/npm-workspace/node_modules/
+!test/fixtures/npm-workspace/node_modules/.keep
+!test/fixtures/pnpm-monorepo/node_modules/
+!test/fixtures/pnpm-monorepo/node_modules/.keep
 dist/
 *.log
 npm-debug.log*
