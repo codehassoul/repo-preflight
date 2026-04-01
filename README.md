@@ -210,3 +210,4 @@ npm test
 - Node.js `20+` is required
 - the package ships compiled output from `dist/`
 - `prepublishOnly` runs the test suite before publish
+- published releases are available on npm as `repo-preflight`
