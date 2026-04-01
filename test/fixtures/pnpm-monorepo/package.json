@@ -1,0 +1,16 @@
+{
+  "name": "fixture-pnpm-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter web-app dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test"
+  }
+}

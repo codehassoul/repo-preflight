@@ -1,0 +1,9 @@
+{
+  "name": "workspace-app",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test"
+  }
+}

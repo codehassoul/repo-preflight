@@ -1,0 +1,16 @@
+{
+  "name": "fixture-npm-workspace",
+  "private": true,
+  "packageManager": "npm@10.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace workspace-app",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces"
+  }
+}

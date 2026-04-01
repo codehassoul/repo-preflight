@@ -1,0 +1,14 @@
+{
+  "name": "fixture-single-library",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "packageManager": "npm@10.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test"
+  }
+}

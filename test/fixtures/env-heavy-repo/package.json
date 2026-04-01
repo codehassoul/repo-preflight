@@ -1,0 +1,16 @@
+{
+  "name": "fixture-env-heavy",
+  "private": true,
+  "packageManager": "npm@10.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0"
+  },
+  "scripts": {
+    "dev": "dotenv -e .env.local -- vite",
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "scripts": true,
+    "envFiles": true
+  },
+  "expectations": {
+    "scripts": ["build", "test"],
+    "envFiles": [".env.example", ".env.local"]
+  },
+  "workspaces": {
+    "scan": true
+  },
+  "output": {
+    "format": "text"
+  }
+}

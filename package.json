@@ -1,0 +1,52 @@
+{
+  "name": "repo-preflight",
+  "version": "1.0.0",
+  "description": "Local-first CLI to check whether a JS/TS repo is actually ready to run.",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "bin": {
+    "repo-preflight": "dist/src/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "files": [
+    "dist/src",
+    "README.md",
+    "LICENSE",
+    "repo-preflight.config.example.json"
+  ],
+  "packageManager": "npm@10.9.4",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node dist/test/repoPreflight.test.js",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "cli",
+    "developer-tools",
+    "javascript",
+    "monorepo",
+    "nodejs",
+    "preflight",
+    "readiness",
+    "repository",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/semver": "^7.7.1",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "semver": "^7.7.4"
+  }
+}
