@@ -1,6 +1,6 @@
 {
   "name": "repo-preflight",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Local-first CLI to check whether a JS/TS repo is actually ready to run.",
   "homepage": "https://github.com/codehassoul/repo-preflight#readme",
   "bugs": {
