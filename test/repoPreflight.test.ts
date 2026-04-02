@@ -550,6 +550,72 @@ test("workspace loading keeps explicit nested workspaces even when the parent is
   }
 });
 
+test("workspace loading keeps explicitly declared example and test workspaces", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir, {
+      name: "mono",
+      workspaces: ["examples/*", "tests/*"],
+    });
+    await createHealthyRepo(path.join(repoDir, "examples", "kitchen-sink"), { name: "kitchen-sink" });
+    await createHealthyRepo(path.join(repoDir, "tests", "e2e-app"), { name: "e2e-app" });
+  });
+
+  try {
+    const workspaces = await loadWorkspacePackages(dir, ["examples/*", "tests/*"]);
+    assert.deepEqual(workspaces, [
+      path.join(dir, "examples", "kitchen-sink"),
+      path.join(dir, "tests", "e2e-app"),
+    ]);
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("workspace loading keeps explicit nested example workspaces under a package root", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir, {
+      name: "mono",
+      workspaces: ["packages/app", "packages/app/examples/*"],
+    });
+    await createHealthyRepo(path.join(repoDir, "packages", "app"), { name: "app" });
+    await createHealthyRepo(path.join(repoDir, "packages", "app", "examples", "react"), { name: "example-react" });
+  });
+
+  try {
+    const workspaces = await loadWorkspacePackages(dir, ["packages/app", "packages/app/examples/*"]);
+    assert.deepEqual(workspaces, [
+      path.join(dir, "packages", "app"),
+      path.join(dir, "packages", "app", "examples", "react"),
+    ]);
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("workspace detection merges package.json and pnpm-workspace patterns with explicit nested children", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await writePackageJson(repoDir, {
+      name: "mono",
+      private: true,
+      workspaces: ["packages/app"],
+    });
+    await touch(repoDir, "pnpm-workspace.yaml", "packages:\n  - 'packages/app/examples/*'\n  - 'tests/*'\n");
+    await createHealthyRepo(path.join(repoDir, "packages", "app"), { name: "app" });
+    await createHealthyRepo(path.join(repoDir, "packages", "app", "examples", "react"), { name: "example-react" });
+    await createHealthyRepo(path.join(repoDir, "tests", "smoke"), { name: "smoke-tests" });
+  });
+
+  try {
+    const report = await runPreflight(dir, { workspaces: true });
+    assert.deepEqual(
+      report.workspaces.map((workspace) => workspace.name),
+      ["app", "example-react", "smoke-tests"],
+    );
+  } finally {
+    await cleanup(dir);
+  }
+});
+
 test("workspace loading ignores nested fixture, test, and playground package containers", async () => {
   const dir = await makeRepo(async (repoDir) => {
     await createHealthyRepo(repoDir, {

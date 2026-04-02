@@ -95,6 +95,15 @@ function isNestedWithinWorkspaceRoot(candidateDir: string, acceptedDirs: string[
   });
 }
 
+function hasExplicitWorkspacePattern(targetDir: string, candidateDir: string, matchingPatterns: Map<string, Set<string>>): boolean {
+  return Boolean(
+    matchingPatterns.get(candidateDir)?.size &&
+      [...(matchingPatterns.get(candidateDir) ?? [])].some((pattern) =>
+        patternExplicitlyMatchesCandidate(targetDir, pattern, candidateDir),
+      ),
+  );
+}
+
 export async function loadWorkspacePackages(targetDir: string, patterns: string[]): Promise<string[]> {
   const matches = new Set<string>();
   const excludedMatches = new Set<string>();
@@ -125,17 +134,13 @@ export async function loadWorkspacePackages(targetDir: string, patterns: string[
 
   const filtered: string[] = [];
   for (const candidate of candidates) {
-    if (hasIgnoredWorkspaceSegment(targetDir, candidate)) {
+    const hasExplicitPattern = hasExplicitWorkspacePattern(targetDir, candidate, matchingPatterns);
+
+    if (hasIgnoredWorkspaceSegment(targetDir, candidate) && !hasExplicitPattern) {
       continue;
     }
 
-    if (
-      isNestedWithinWorkspaceRoot(candidate, filtered) &&
-      !(matchingPatterns.get(candidate)?.size &&
-        [...(matchingPatterns.get(candidate) ?? [])].some((pattern) =>
-          patternExplicitlyMatchesCandidate(targetDir, pattern, candidate),
-        ))
-    ) {
+    if (isNestedWithinWorkspaceRoot(candidate, filtered) && !hasExplicitPattern) {
       continue;
     }
 
