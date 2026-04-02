@@ -374,6 +374,48 @@ test("workspace scanning with --workspaces", async () => {
   }
 });
 
+test("workspace scanning honors negated package.json workspaces", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir, {
+      name: "mono",
+      workspaces: ["packages/*", "!packages/b"],
+    });
+    await createHealthyRepo(path.join(repoDir, "packages", "a"), { name: "package-a" });
+    await createHealthyRepo(path.join(repoDir, "packages", "b"), { name: "package-b" });
+  });
+
+  try {
+    const report = await runPreflight(dir, { workspaces: true });
+    assert.deepEqual(
+      report.workspaces.map((workspace) => workspace.name),
+      ["package-a"],
+    );
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("workspace scanning honors negated pnpm-workspace patterns", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir, {
+      name: "mono",
+    });
+    await touch(repoDir, "pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n  - '!packages/b'\n");
+    await createHealthyRepo(path.join(repoDir, "packages", "a"), { name: "package-a" });
+    await createHealthyRepo(path.join(repoDir, "packages", "b"), { name: "package-b" });
+  });
+
+  try {
+    const report = await runPreflight(dir, { workspaces: true });
+    assert.deepEqual(
+      report.workspaces.map((workspace) => workspace.name),
+      ["package-a"],
+    );
+  } finally {
+    await cleanup(dir);
+  }
+});
+
 test("workspace packages inherit root package manager lockfile and install state", async () => {
   const dir = await makeRepo(async (repoDir) => {
     await writePackageJson(repoDir, {
@@ -460,6 +502,24 @@ test("workspace loading only includes directories with package.json", async () =
   try {
     const workspaces = await loadWorkspacePackages(dir, ["packages/**"]);
     assert.deepEqual(workspaces, [path.join(dir, "packages", "real-package")]);
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("workspace loading excludes negated workspace matches", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir, {
+      name: "mono",
+      workspaces: ["packages/**", "!packages/excluded"],
+    });
+    await createHealthyRepo(path.join(repoDir, "packages", "included"), { name: "included" });
+    await createHealthyRepo(path.join(repoDir, "packages", "excluded"), { name: "excluded" });
+  });
+
+  try {
+    const workspaces = await loadWorkspacePackages(dir, ["packages/**", "!packages/excluded"]);
+    assert.deepEqual(workspaces, [path.join(dir, "packages", "included")]);
   } finally {
     await cleanup(dir);
   }

@@ -19,6 +19,14 @@ function splitPattern(pattern: string): string[] {
   return pattern.split("/").filter(Boolean);
 }
 
+function isNegatedPattern(pattern: string): boolean {
+  return pattern.startsWith("!");
+}
+
+function normalizePattern(pattern: string): string {
+  return isNegatedPattern(pattern) ? pattern.slice(1) : pattern;
+}
+
 async function expandSegments(baseDir: string, segments: string[]): Promise<string[]> {
   if (segments.length === 0) {
     return [baseDir];
@@ -68,16 +76,20 @@ function isNestedWithinWorkspaceRoot(candidateDir: string, acceptedDirs: string[
 
 export async function loadWorkspacePackages(targetDir: string, patterns: string[]): Promise<string[]> {
   const matches = new Set<string>();
+  const excludedMatches = new Set<string>();
 
   for (const pattern of patterns) {
-    for (const match of await expandSegments(targetDir, splitPattern(pattern))) {
+    const normalizedPattern = normalizePattern(pattern);
+    const targetMatches = isNegatedPattern(pattern) ? excludedMatches : matches;
+
+    for (const match of await expandSegments(targetDir, splitPattern(normalizedPattern))) {
       if (match !== targetDir && (await pathExists(path.join(match, "package.json")))) {
-        matches.add(path.resolve(match));
+        targetMatches.add(path.resolve(match));
       }
     }
   }
 
-  const candidates = [...matches].sort((a, b) => {
+  const candidates = [...matches].filter((candidate) => !excludedMatches.has(candidate)).sort((a, b) => {
     const depthDelta = a.split(path.sep).length - b.split(path.sep).length;
     return depthDelta === 0 ? a.localeCompare(b) : depthDelta;
   });
