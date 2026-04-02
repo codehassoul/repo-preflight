@@ -1,6 +1,12 @@
 import type { CheckResult, RepoPackageJson } from "../types";
 import { detectRepoKind } from "../utils/repoKind";
 
+const DOCS_SCRIPT_ALIASES: Partial<Record<"dev" | "build" | "test", string[]>> = {
+  dev: ["docs", "docs:dev", "docs-dev", "docs:serve", "docs-serve"],
+  build: ["docs:build", "docs-build"],
+  test: ["docs:test", "docs-test"],
+};
+
 export async function checkScripts(
   targetDir: string,
   packageJson: RepoPackageJson | undefined,
@@ -14,11 +20,14 @@ export async function checkScripts(
   const repoKind = await detectRepoKind(targetDir, packageJson);
 
   return expectedScripts.map((scriptName) => {
-    if (scripts[scriptName]) {
+    const hasDirectScript = Boolean(scripts[scriptName]);
+    const alias = getScriptAlias(scriptName, scripts, repoKind);
+
+    if (hasDirectScript || alias) {
       return {
         id: `script:${scriptName}`,
         status: "pass",
-        message: `Found ${scriptName} script.`,
+        message: hasDirectScript ? `Found ${scriptName} script.` : `Found ${scriptName} workflow via ${alias} script.`,
       };
     }
 
@@ -38,6 +47,19 @@ export async function checkScripts(
       },
     };
   });
+}
+
+function getScriptAlias(
+  scriptName: string,
+  scripts: Record<string, string>,
+  repoKind: Awaited<ReturnType<typeof detectRepoKind>>,
+): string | undefined {
+  if (!repoKind.isLikelyDocs || repoKind.isWorkspaceOrchestratorRoot) {
+    return undefined;
+  }
+
+  const aliases = DOCS_SCRIPT_ALIASES[scriptName as "dev" | "build" | "test"] ?? [];
+  return aliases.find((alias) => Boolean(scripts[alias]));
 }
 
 function getMissingScriptStatus(

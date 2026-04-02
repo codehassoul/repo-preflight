@@ -6,6 +6,7 @@ import { pathExists } from "./fs";
 export interface RepoKindSignals {
   isLikelyLibrary: boolean;
   isLikelyApp: boolean;
+  isLikelyDocs: boolean;
   isWorkspaceOrchestratorRoot: boolean;
   hasBuildSignals: boolean;
   hasTestSignals: boolean;
@@ -19,6 +20,14 @@ const appDependencyNames = [
   "nuxt",
   "parcel",
   "webpack-dev-server",
+];
+
+const docsDependencyNames = [
+  "vitepress",
+  "docusaurus",
+  "@docusaurus/core",
+  "nextra",
+  "docsify-cli",
 ];
 
 const buildDependencyNames = [
@@ -79,6 +88,9 @@ export async function detectRepoKind(
     ["dev", "start", "serve", "preview"].includes(scriptName),
   );
   const isLikelyApp = hasAppDependency || hasAppScript;
+  const isLikelyDocs =
+    docsDependencyNames.some((name) => dependencyNames.has(name)) ||
+    Object.keys(scripts).some((scriptName) => scriptName === "docs" || scriptName.startsWith("docs-"));
   const isWorkspaceOrchestratorRoot = Boolean(packageJson?.workspaces) || (await pathExists(path.join(targetDir, "pnpm-workspace.yaml")));
 
   const hasBuildDependency = buildDependencyNames.some((name) => dependencyNames.has(name));
@@ -92,6 +104,7 @@ export async function detectRepoKind(
   return {
     isLikelyLibrary,
     isLikelyApp,
+    isLikelyDocs,
     isWorkspaceOrchestratorRoot,
     hasBuildSignals,
     hasTestSignals,

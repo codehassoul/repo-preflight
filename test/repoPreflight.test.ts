@@ -554,6 +554,43 @@ test("workspace orchestrator roots do not warn on missing dev when child package
   }
 });
 
+test("docs workspaces can satisfy dev and build via docs-prefixed scripts", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await writePackageJson(repoDir, {
+      name: "docs-site",
+      private: true,
+      scripts: {
+        docs: "vitepress dev",
+        "docs-build": "vitepress build",
+      },
+      devDependencies: {
+        vitepress: "^2.0.0-alpha.15",
+      },
+    });
+  });
+
+  try {
+    const results = await checkScripts(dir, {
+      name: "docs-site",
+      private: true,
+      scripts: {
+        docs: "vitepress dev",
+        "docs-build": "vitepress build",
+      },
+      devDependencies: {
+        vitepress: "^2.0.0-alpha.15",
+      },
+    });
+    assert.equal(results.find((entry) => entry.id === "script:dev")?.status, "pass");
+    assert.match(results.find((entry) => entry.id === "script:dev")?.message ?? "", /via docs script/);
+    assert.equal(results.find((entry) => entry.id === "script:build")?.status, "pass");
+    assert.match(results.find((entry) => entry.id === "script:build")?.message ?? "", /via docs-build script/);
+    assert.equal(results.find((entry) => entry.id === "script:test")?.status, "info");
+  } finally {
+    await cleanup(dir);
+  }
+});
+
 test("cross-env usage without env files stays informational", async () => {
   const dir = await makeRepo(async (repoDir) => {
     await writePackageJson(repoDir, {
