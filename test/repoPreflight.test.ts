@@ -525,6 +525,31 @@ test("workspace loading excludes negated workspace matches", async () => {
   }
 });
 
+test("workspace loading keeps explicit nested workspaces even when the parent is also a package", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir, {
+      name: "mono",
+      workspaces: ["code", "code/addons/*", "scripts"],
+    });
+    await createHealthyRepo(path.join(repoDir, "code"), { name: "code-root" });
+    await createHealthyRepo(path.join(repoDir, "code", "addons", "a11y"), { name: "addon-a11y" });
+    await createHealthyRepo(path.join(repoDir, "code", "addons", "themes"), { name: "addon-themes" });
+    await createHealthyRepo(path.join(repoDir, "scripts"), { name: "scripts-root" });
+  });
+
+  try {
+    const workspaces = await loadWorkspacePackages(dir, ["code", "code/addons/*", "scripts"]);
+    assert.deepEqual(workspaces, [
+      path.join(dir, "code"),
+      path.join(dir, "code", "addons", "a11y"),
+      path.join(dir, "code", "addons", "themes"),
+      path.join(dir, "scripts"),
+    ]);
+  } finally {
+    await cleanup(dir);
+  }
+});
+
 test("workspace loading ignores nested fixture, test, and playground package containers", async () => {
   const dir = await makeRepo(async (repoDir) => {
     await createHealthyRepo(repoDir, {

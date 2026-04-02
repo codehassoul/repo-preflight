@@ -27,6 +27,27 @@ function normalizePattern(pattern: string): string {
   return isNegatedPattern(pattern) ? pattern.slice(1) : pattern;
 }
 
+function segmentToRegex(segment: string): RegExp {
+  return new RegExp(`^${segment.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]+")}$`);
+}
+
+function patternExplicitlyMatchesCandidate(targetDir: string, pattern: string, candidateDir: string): boolean {
+  const patternSegments = splitPattern(normalizePattern(pattern));
+  const candidateSegments = path.relative(targetDir, candidateDir).split(path.sep).filter(Boolean);
+
+  if (patternSegments.includes("**") || patternSegments.length !== candidateSegments.length) {
+    return false;
+  }
+
+  return patternSegments.every((segment, index) => {
+    if (segment.includes("*")) {
+      return segmentToRegex(segment).test(candidateSegments[index]);
+    }
+
+    return segment === candidateSegments[index];
+  });
+}
+
 async function expandSegments(baseDir: string, segments: string[]): Promise<string[]> {
   if (segments.length === 0) {
     return [baseDir];
@@ -77,6 +98,7 @@ function isNestedWithinWorkspaceRoot(candidateDir: string, acceptedDirs: string[
 export async function loadWorkspacePackages(targetDir: string, patterns: string[]): Promise<string[]> {
   const matches = new Set<string>();
   const excludedMatches = new Set<string>();
+  const matchingPatterns = new Map<string, Set<string>>();
 
   for (const pattern of patterns) {
     const normalizedPattern = normalizePattern(pattern);
@@ -84,7 +106,14 @@ export async function loadWorkspacePackages(targetDir: string, patterns: string[
 
     for (const match of await expandSegments(targetDir, splitPattern(normalizedPattern))) {
       if (match !== targetDir && (await pathExists(path.join(match, "package.json")))) {
-        targetMatches.add(path.resolve(match));
+        const resolvedMatch = path.resolve(match);
+        targetMatches.add(resolvedMatch);
+
+        if (!isNegatedPattern(pattern)) {
+          const existingPatterns = matchingPatterns.get(resolvedMatch) ?? new Set<string>();
+          existingPatterns.add(pattern);
+          matchingPatterns.set(resolvedMatch, existingPatterns);
+        }
       }
     }
   }
@@ -100,7 +129,13 @@ export async function loadWorkspacePackages(targetDir: string, patterns: string[
       continue;
     }
 
-    if (isNestedWithinWorkspaceRoot(candidate, filtered)) {
+    if (
+      isNestedWithinWorkspaceRoot(candidate, filtered) &&
+      !(matchingPatterns.get(candidate)?.size &&
+        [...(matchingPatterns.get(candidate) ?? [])].some((pattern) =>
+          patternExplicitlyMatchesCandidate(targetDir, pattern, candidate),
+        ))
+    ) {
       continue;
     }
 
