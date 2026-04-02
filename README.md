@@ -132,7 +132,9 @@ Workspace detection currently supports:
 - `package.json` `workspaces`
 - `pnpm-workspace.yaml`
 
-When scanning workspaces, package manager, lockfile, and install-state checks can inherit from the workspace root where appropriate.
+When scanning workspaces, `repo-preflight` keeps the results focused on intended package roots. It ignores common nested non-workspace containers such as `__tests__`, `fixtures`, and `playground` directories, and it prefers the shallowest matching package root when a broad glob would otherwise pull in nested descendants.
+
+Package manager, lockfile, and install-state checks can still inherit from the workspace root where appropriate.
 
 ## Configuration
 

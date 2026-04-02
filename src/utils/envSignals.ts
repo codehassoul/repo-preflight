@@ -10,7 +10,8 @@ export interface EnvSignalSummary {
   reasons: string[];
 }
 
-const envToolDependencies = ["dotenv", "dotenv-cli", "env-cmd", "cross-env"];
+const envFileToolDependencies = ["dotenv", "dotenv-cli", "dotenvx", "env-cmd"];
+const envUsageToolDependencies = ["cross-env"];
 const sourceDirs = ["src", "app", "pages", "lib"];
 const sourceExtensions = new Set([".js", ".cjs", ".mjs", ".ts", ".cts", ".mts", ".tsx", ".jsx"]);
 const sourceScanLimit = 24;
@@ -23,9 +24,15 @@ function collectDependencyNames(packageJson: RepoPackageJson | undefined): Set<s
   ]);
 }
 
-function hasEnvInScripts(scripts: Record<string, string>): boolean {
+function hasEnvFileToolingInScripts(scripts: Record<string, string>): boolean {
   return Object.values(scripts).some((command) =>
-    /(dotenv|dotenvx|env-cmd|cross-env|\.env(\.[\w-]+)?)/i.test(command),
+    /(dotenv|dotenvx|env-cmd|\.env(\.[\w-]+)?)/i.test(command),
+  );
+}
+
+function hasShellEnvInjectionInScripts(scripts: Record<string, string>): boolean {
+  return Object.values(scripts).some((command) =>
+    /\bcross-env(\s|$)/i.test(command),
   );
 }
 
@@ -87,12 +94,20 @@ export async function detectEnvSignals(
   const scripts = packageJson?.scripts ?? {};
   const dependencyNames = collectDependencyNames(packageJson);
 
-  if (hasEnvInScripts(scripts)) {
-    strongReasons.push("package.json scripts reference env tooling");
+  if (hasEnvFileToolingInScripts(scripts)) {
+    strongReasons.push("package.json scripts reference env-file tooling");
   }
 
-  if (envToolDependencies.some((name) => dependencyNames.has(name))) {
-    strongReasons.push("dependencies include env tooling");
+  if (envFileToolDependencies.some((name) => dependencyNames.has(name))) {
+    strongReasons.push("dependencies include env-file tooling");
+  }
+
+  if (hasShellEnvInjectionInScripts(scripts)) {
+    usageReasons.push("package.json scripts inject environment variables");
+  }
+
+  if (envUsageToolDependencies.some((name) => dependencyNames.has(name))) {
+    usageReasons.push("dependencies include env variable injection tooling");
   }
 
   if (await findEnvUsageInSources(targetDir)) {

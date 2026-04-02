@@ -2,6 +2,19 @@ import path from "node:path";
 
 import { pathExists, readDirNames } from "../utils/fs";
 
+const IGNORED_WORKSPACE_SEGMENTS = new Set([
+  "__test__",
+  "__tests__",
+  "example",
+  "examples",
+  "fixture",
+  "fixtures",
+  "playground",
+  "playgrounds",
+  "test",
+  "tests",
+]);
+
 function splitPattern(pattern: string): string[] {
   return pattern.split("/").filter(Boolean);
 }
@@ -41,6 +54,18 @@ async function expandSegments(baseDir: string, segments: string[]): Promise<stri
   return expandSegments(path.join(baseDir, segment), rest);
 }
 
+function hasIgnoredWorkspaceSegment(targetDir: string, candidateDir: string): boolean {
+  const relativeSegments = path.relative(targetDir, candidateDir).split(path.sep).filter(Boolean);
+  return relativeSegments.some((segment) => IGNORED_WORKSPACE_SEGMENTS.has(segment.toLowerCase()));
+}
+
+function isNestedWithinWorkspaceRoot(candidateDir: string, acceptedDirs: string[]): boolean {
+  return acceptedDirs.some((acceptedDir) => {
+    const relativePath = path.relative(acceptedDir, candidateDir);
+    return relativePath !== "" && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
+  });
+}
+
 export async function loadWorkspacePackages(targetDir: string, patterns: string[]): Promise<string[]> {
   const matches = new Set<string>();
 
@@ -52,5 +77,23 @@ export async function loadWorkspacePackages(targetDir: string, patterns: string[
     }
   }
 
-  return [...matches].sort((a, b) => a.localeCompare(b));
+  const candidates = [...matches].sort((a, b) => {
+    const depthDelta = a.split(path.sep).length - b.split(path.sep).length;
+    return depthDelta === 0 ? a.localeCompare(b) : depthDelta;
+  });
+
+  const filtered: string[] = [];
+  for (const candidate of candidates) {
+    if (hasIgnoredWorkspaceSegment(targetDir, candidate)) {
+      continue;
+    }
+
+    if (isNestedWithinWorkspaceRoot(candidate, filtered)) {
+      continue;
+    }
+
+    filtered.push(candidate);
+  }
+
+  return filtered.sort((a, b) => a.localeCompare(b));
 }

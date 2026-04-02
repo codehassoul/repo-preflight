@@ -6,6 +6,7 @@ import { pathExists } from "./fs";
 export interface RepoKindSignals {
   isLikelyLibrary: boolean;
   isLikelyApp: boolean;
+  isWorkspaceOrchestratorRoot: boolean;
   hasBuildSignals: boolean;
   hasTestSignals: boolean;
 }
@@ -78,6 +79,7 @@ export async function detectRepoKind(
     ["dev", "start", "serve", "preview"].includes(scriptName),
   );
   const isLikelyApp = hasAppDependency || hasAppScript;
+  const isWorkspaceOrchestratorRoot = Boolean(packageJson?.workspaces) || (await pathExists(path.join(targetDir, "pnpm-workspace.yaml")));
 
   const hasBuildDependency = buildDependencyNames.some((name) => dependencyNames.has(name));
   const hasBuildConfig = (
@@ -90,6 +92,7 @@ export async function detectRepoKind(
   return {
     isLikelyLibrary,
     isLikelyApp,
+    isWorkspaceOrchestratorRoot,
     hasBuildSignals,
     hasTestSignals,
   };

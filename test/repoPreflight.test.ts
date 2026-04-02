@@ -465,6 +465,135 @@ test("workspace loading only includes directories with package.json", async () =
   }
 });
 
+test("workspace loading ignores nested fixture, test, and playground package containers", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir, {
+      name: "mono",
+      workspaces: ["packages/**"],
+    });
+    await createHealthyRepo(path.join(repoDir, "packages", "app"), { name: "app" });
+    await createHealthyRepo(path.join(repoDir, "packages", "app", "playground"), { name: "app-playground" });
+    await createHealthyRepo(path.join(repoDir, "packages", "fixtures", "vite-app"), { name: "fixture-vite-app" });
+    await createHealthyRepo(path.join(repoDir, "packages", "__tests__", "smoke-app"), { name: "smoke-app" });
+    await createHealthyRepo(path.join(repoDir, "packages", "@scope", "kit"), { name: "@scope/kit" });
+  });
+
+  try {
+    const workspaces = await loadWorkspacePackages(dir, ["packages/**"]);
+    assert.deepEqual(workspaces, [
+      path.join(dir, "packages", "@scope", "kit"),
+      path.join(dir, "packages", "app"),
+    ]);
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("workspace scanning omits nested non-workspace package roots from reports", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await createHealthyRepo(repoDir, {
+      name: "mono",
+      workspaces: ["packages/**"],
+    });
+    await createHealthyRepo(path.join(repoDir, "packages", "app"), { name: "app" });
+    await createHealthyRepo(path.join(repoDir, "packages", "app", "fixtures", "broken-case"), {
+      name: "broken-case",
+      scripts: {},
+    });
+    await createHealthyRepo(path.join(repoDir, "packages", "playgrounds", "sandbox"), {
+      name: "sandbox",
+    });
+  });
+
+  try {
+    const report = await runPreflight(dir, { workspaces: true });
+    assert.deepEqual(
+      report.workspaces.map((workspace) => workspace.name),
+      ["app"],
+    );
+    assert.equal(report.workspaces.length, 1);
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("workspace orchestrator roots do not warn on missing dev when child packages own the app flow", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await writePackageJson(repoDir, {
+      name: "mono",
+      private: true,
+      packageManager: "npm@10.0.0",
+      workspaces: ["packages/*"],
+      dependencies: {
+        vite: "^5.0.0",
+      },
+      scripts: {
+        build: "npm run build --workspaces",
+        test: "npm run test --workspaces",
+      },
+    });
+    await touch(repoDir, "package-lock.json");
+    await mkdir(path.join(repoDir, "node_modules"));
+    await writePackageJson(path.join(repoDir, "packages", "app"), {
+      name: "workspace-app",
+      private: true,
+      scripts: {
+        dev: "vite",
+        build: "vite build",
+        test: "vitest run",
+      },
+    });
+  });
+
+  try {
+    const report = await runPreflight(dir, { workspaces: true });
+    assert.equal(report.root.results.find((entry) => entry.id === "script:dev")?.status, "info");
+    assert.equal(report.root.verdict, "Ready");
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("cross-env usage without env files stays informational", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await writePackageJson(repoDir, {
+      name: "cross-env-app",
+      private: true,
+      packageManager: "npm@10.0.0",
+      scripts: {
+        dev: "cross-env NODE_ENV=development vite",
+        build: "tsc -p tsconfig.json",
+        test: "node --test",
+      },
+      devDependencies: {
+        "cross-env": "^7.0.3",
+      },
+    });
+    await touch(repoDir, "package-lock.json");
+    await mkdir(path.join(repoDir, "node_modules"));
+    await touch(repoDir, "src/main.ts", "console.log(process.env.NODE_ENV);");
+  });
+
+  try {
+    const result = await checkEnvFiles(dir, {
+      name: "cross-env-app",
+      private: true,
+      packageManager: "npm@10.0.0",
+      scripts: {
+        dev: "cross-env NODE_ENV=development vite",
+        build: "tsc -p tsconfig.json",
+        test: "node --test",
+      },
+      devDependencies: {
+        "cross-env": "^7.0.3",
+      },
+    });
+    assert.equal(result.status, "info");
+  } finally {
+    await cleanup(dir);
+  }
+});
+
 test("aggregated verdict across workspaces", async () => {
   const dir = await makeRepo(async (repoDir) => {
     await createHealthyRepo(repoDir, {

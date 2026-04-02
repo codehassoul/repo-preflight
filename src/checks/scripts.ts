@@ -45,6 +45,10 @@ function getMissingScriptStatus(
   repoKind: Awaited<ReturnType<typeof detectRepoKind>>,
 ): CheckResult["status"] {
   if (scriptName === "dev") {
+    if (repoKind.isWorkspaceOrchestratorRoot) {
+      return "info";
+    }
+
     return repoKind.isLikelyApp ? "warn" : "info";
   }
 
