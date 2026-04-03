@@ -24,6 +24,7 @@ The tool is designed to stay calm on healthy repos, avoid noisy false alarms, an
 - Clear `PASS`, `INFO`, `WARN`, and `FAIL` checks
 - Final readiness verdict plus summary counts
 - Smarter heuristics for scripts and env files
+- Install-state detection for `node_modules` and Yarn Plug'n'Play
 - Optional workspace scanning for monorepos
 - Human-readable text output and machine-friendly JSON output
 
@@ -77,6 +78,8 @@ Use a specific config file:
 repo-preflight . --config ./repo-preflight.config.json
 ```
 
+When `--config` is provided, relative paths are resolved from the shell's current working directory.
+
 ## What It Checks
 
 `repo-preflight` currently checks:
@@ -85,7 +88,7 @@ repo-preflight . --config ./repo-preflight.config.json
 - Node version against `engines.node`
 - package manager detection
 - expected lockfile presence
-- dependency install state via `node_modules`
+- dependency install state via `node_modules` or Yarn Plug'n'Play markers
 - expected scripts such as `dev`, `build`, and `test`
 - common env-file presence when repo signals suggest they matter
 
@@ -139,6 +142,8 @@ Package manager, lockfile, and install-state checks can still inherit from the w
 ## Configuration
 
 `repo-preflight` looks for `repo-preflight.config.json` in the target directory unless you pass `--config`.
+
+If you do pass `--config`, the path is resolved relative to the directory where you run the command, not relative to the scanned repo.
 
 Example:
 
@@ -207,9 +212,22 @@ Test:
 npm test
 ```
 
+Type-check without emitting:
+
+```bash
+npm run typecheck
+```
+
+Run the local verification bundle:
+
+```bash
+npm run check
+```
+
 ## Notes
 
 - Node.js `20+` is required
 - the package ships compiled output from `dist/`
+- CI runs on Linux, macOS, and Windows for Node.js `20` and `22`
 - `prepublishOnly` runs the test suite before publish
 - published releases are available on npm as `repo-preflight`

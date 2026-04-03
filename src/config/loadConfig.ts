@@ -21,17 +21,25 @@ export interface ConfigLoadResult {
   error?: CheckResult;
 }
 
-export async function resolveConfigPath(targetDir: string, explicitPath?: string): Promise<string | undefined> {
+export async function resolveConfigPath(
+  targetDir: string,
+  explicitPath?: string,
+  configBaseDir = targetDir,
+): Promise<string | undefined> {
   if (explicitPath) {
-    return path.resolve(targetDir, explicitPath);
+    return path.resolve(configBaseDir, explicitPath);
   }
 
   const candidate = path.join(targetDir, defaultConfigFile);
   return (await pathExists(candidate)) ? candidate : undefined;
 }
 
-export async function loadConfig(targetDir: string, explicitPath?: string): Promise<ConfigLoadResult> {
-  const configPath = await resolveConfigPath(targetDir, explicitPath);
+export async function loadConfig(
+  targetDir: string,
+  explicitPath?: string,
+  configBaseDir = targetDir,
+): Promise<ConfigLoadResult> {
+  const configPath = await resolveConfigPath(targetDir, explicitPath, configBaseDir);
   if (!configPath) {
     return {};
   }

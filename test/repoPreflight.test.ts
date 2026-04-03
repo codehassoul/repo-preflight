@@ -151,6 +151,31 @@ test("config file loads correctly", async () => {
   }
 });
 
+test("explicit config path resolves from the caller cwd", async () => {
+  const baseDir = await mkdtemp(path.join(os.tmpdir(), "repo-preflight-config-base-"));
+  const repoDir = await makeRepo(async (targetRepoDir) => {
+    await createHealthyRepo(targetRepoDir);
+  });
+  const configPath = path.join(baseDir, "custom-config.json");
+
+  try {
+    await writeJson(configPath, {
+      checks: { scripts: false },
+    });
+
+    const report = await runPreflight(repoDir, {
+      configPath: "./custom-config.json",
+      configBaseDir: baseDir,
+    });
+
+    assert.equal(report.configPath, configPath);
+    assert.equal(report.root.results.some((entry) => entry.id.startsWith("script:")), false);
+  } finally {
+    await cleanup(repoDir);
+    await cleanup(baseDir);
+  }
+});
+
 test("public entrypoint exports the library API", () => {
   const parsed = parseCliArgs([".", "--json"], process.cwd());
 
@@ -208,6 +233,73 @@ test("custom env expectations override defaults", async () => {
     const result = await checkEnvFiles(dir, { name: "fixture", private: true }, [".env.ci"]);
     assert.equal(result.status, "pass");
     assert.match(result.message, /\.env\.ci/);
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("yarn plug'n'play install state counts as ready", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await writePackageJson(repoDir, {
+      name: "yarn-pnp-app",
+      private: true,
+      packageManager: "yarn@4.0.0",
+      engines: { node: ">=20" },
+      scripts: {
+        dev: "yarn dev",
+        build: "yarn build",
+        test: "yarn test",
+      },
+    });
+    await touch(repoDir, "yarn.lock");
+    await touch(repoDir, ".pnp.cjs");
+  });
+
+  try {
+    const report = await runPreflight(dir);
+    const dependencies = report.root.results.find((entry) => entry.id === "dependencies");
+
+    assert.equal(dependencies?.status, "pass");
+    assert.match(dependencies?.message ?? "", /Plug'n'Play/);
+    assert.equal(report.verdict, "Ready");
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("workspace packages can inherit yarn plug'n'play install state from the root", async () => {
+  const dir = await makeRepo(async (repoDir) => {
+    await writePackageJson(repoDir, {
+      name: "yarn-workspace-root",
+      private: true,
+      packageManager: "yarn@4.0.0",
+      engines: { node: ">=20" },
+      workspaces: ["packages/*"],
+      scripts: {
+        build: "yarn workspaces foreach build",
+        test: "yarn workspaces foreach test",
+      },
+    });
+    await touch(repoDir, "yarn.lock");
+    await touch(repoDir, ".pnp.cjs");
+    await writePackageJson(path.join(repoDir, "packages", "app"), {
+      name: "workspace-app",
+      private: true,
+      scripts: {
+        dev: "vite",
+        build: "vite build",
+        test: "vitest",
+      },
+    });
+  });
+
+  try {
+    const report = await runPreflight(dir, { workspaces: true });
+    const dependencies = report.workspaces[0]?.results.find((entry) => entry.id === "dependencies");
+
+    assert.equal(dependencies?.status, "pass");
+    assert.match(dependencies?.message ?? "", /workspace root install state/);
+    assert.match(dependencies?.message ?? "", /Plug'n'Play/);
   } finally {
     await cleanup(dir);
   }

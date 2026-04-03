@@ -98,6 +98,7 @@ async function scanRepo(
   results.push(
     await checkDependenciesInstalled(repoPath, {
       workspaceRootDir: kind === "workspace" ? workspaceRoot?.path : undefined,
+      packageManager: packageManagerDetection.manager,
     }),
   );
 
@@ -204,10 +205,14 @@ export function parseCliArgs(argv: string[], cwd = process.cwd()): ParsedCliArgs
 
 export async function runPreflight(
   targetDir: string,
-  options?: { configPath?: string; workspaces?: boolean; json?: boolean },
+  options?: { configPath?: string; workspaces?: boolean; json?: boolean; configBaseDir?: string },
 ): Promise<PreflightReport> {
   const resolvedTargetDir = path.resolve(targetDir);
-  const configLoad = await loadConfig(resolvedTargetDir, options?.configPath);
+  const configLoad = await loadConfig(
+    resolvedTargetDir,
+    options?.configPath,
+    options?.configBaseDir ?? process.cwd(),
+  );
   if (configLoad.error) {
     return buildFailureReport(
       resolvedTargetDir,
@@ -283,6 +288,7 @@ export async function executeCli(argv: string[], runtime: CliRuntime = {}): Prom
       configPath: parsed.configPath,
       workspaces: parsed.workspaces,
       json: parsed.json,
+      configBaseDir: cwd,
     });
 
     const output =

@@ -30,7 +30,9 @@
   "packageManager": "npm@10.9.4",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node dist/test/repoPreflight.test.js",
+    "check": "npm run typecheck && npm test",
     "prepublishOnly": "npm test"
   },
   "keywords": [
