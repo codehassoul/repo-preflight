@@ -228,6 +228,6 @@ npm run check
 
 - Node.js `20+` is required
 - the package ships compiled output from `dist/`
-- CI runs on Linux, macOS, and Windows for Node.js `20` and `22`
+- CI runs on Linux, macOS, and Windows for Node.js `20`, `22`, and `24`
 - `prepublishOnly` runs the test suite before publish
 - published releases are available on npm as `repo-preflight`

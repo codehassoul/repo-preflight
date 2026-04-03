@@ -3,14 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - codex/release-polish
       - main
-      - master
   pull_request:
     branches:
-      - codex/release-polish
       - main
-      - master
 
 permissions:
   contents: read
@@ -23,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [20, 22]
+        node-version: [20, 22, 24]
 
     steps:
       - name: Check out repository
